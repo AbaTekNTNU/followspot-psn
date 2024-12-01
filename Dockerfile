@@ -4,14 +4,17 @@ WORKDIR /frontend
 
 RUN npm install -g pnpm
 
-COPY package.json pnpm-lock.yaml ./
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
 
 RUN pnpm i
 
+COPY frontend .
 
-FROM alpine:3.20
+RUN pnpm build
 
-RUN apk add --no-cache g++ python3 python3-dev py3-aiohttp git
+FROM alpine:3.20 AS backend
+
+RUN apk add --no-cache g++ python3 python3-dev git
 
 RUN git clone --recursive https://github.com/vyv/psn-py.git
 WORKDIR /psn-py/vendors/pybind11
@@ -20,11 +23,20 @@ RUN git fetch --tags && git checkout v2.13.6
 WORKDIR /psn-py
 
 RUN g++ -O3 -Wall -shared -fPIC $(python3-config --includes) \
--Ivendors/psn/include -Ivendors/pybind11/include src/main.cpp \
--o psn$(python3-config --extension-suffix)
+  -Ivendors/psn/include -Ivendors/pybind11/include src/main.cpp \
+  -o psn$(python3-config --extension-suffix)
 
-COPY backend /backend
-WORKDIR /backend
-RUN cp /psn-py/psn$(python3-config --extension-suffix) .
+RUN cp /psn-py/psn$(python3-config --extension-suffix) /output
 
-ENTRYPOINT ["python3", "psn_server.py"]
+
+FROM alpine:3.20 AS final
+
+RUN apk add --no-cache python3 py3-aiohttp
+
+
+COPY --from=backend /output /backend/psn.so
+COPY backend/psn_server.py /backend/psn_server.py
+COPY --from=frontend /frontend/dist /backend/static
+
+
+ENTRYPOINT ["python3", "/backend/psn_server.py"]
