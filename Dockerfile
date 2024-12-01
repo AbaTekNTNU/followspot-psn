@@ -1,3 +1,14 @@
+FROM node:alpine3.20 AS frontend
+
+WORKDIR /frontend
+
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml ./
+
+RUN pnpm i
+
+
 FROM alpine:3.20
 
 RUN apk add --no-cache g++ python3 python3-dev py3-aiohttp git
