@@ -1,0 +1,5 @@
+services:
+  followspot-psn:
+    build: .
+    ports:
+      - "8000:8000"
