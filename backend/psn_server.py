@@ -22,7 +22,7 @@ class TrackerData:
 trackers = {}
 
 
-for i in NUM_TRACKERS:
+for i in range(NUM_TRACKERS):
     trackers[i] = psn.Tracker(i, f"Tracker {i}")
     trackers[i].set_pos(psn.Float3(0, 0, 0))
 

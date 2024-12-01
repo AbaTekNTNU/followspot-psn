@@ -38,5 +38,6 @@ COPY --from=backend /output /backend/psn.so
 COPY backend/psn_server.py /backend/psn_server.py
 COPY --from=frontend /frontend/dist /backend/static
 
+WORKDIR /backend
 
 ENTRYPOINT ["python3", "/backend/psn_server.py"]
