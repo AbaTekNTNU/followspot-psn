@@ -5,9 +5,11 @@
 
   let ws: WebSocket | null = $state(null);
 
+  let parent: HTMLElement | null = $state(null);
+
   let trackers: TrackerData[] = $state([
     { id: 1, x: 0, y: 0 },
-    { id: 2, x: 400, y: 40 },
+    { id: 2, x: 0, y: 0 },
   ]);
 
   onMount(() => {
@@ -19,6 +21,15 @@
   });
 </script>
 
-{#each trackers as tracker}
-  <Drag bind:id={tracker.id} bind:x={tracker.x} bind:y={tracker.y} {ws} />
-{/each}
+<div bind:this={parent} class="relative border border-red-500">
+  <img src="/scene_drawing.png" alt="moradi" class="absolute" />
+  {#each trackers as tracker}
+    <Drag
+      bind:id={tracker.id}
+      bind:x={tracker.x}
+      bind:y={tracker.y}
+      {ws}
+      {parent}
+    />
+  {/each}
+</div>
