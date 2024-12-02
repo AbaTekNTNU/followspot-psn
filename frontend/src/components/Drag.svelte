@@ -54,5 +54,5 @@
   style={`transform: translate(${x}px, ${y}px)`}
   class="absolute flex h-40 w-40 touch-none items-center justify-center rounded-full border-red-400 bg-red-400"
 >
-  dragable
+  Tracker {id}
 </div>

@@ -49,7 +49,7 @@ def get_elapsed_time_ms():
 
 
 def pic_to_scene_coords(x, y):
-    return x / 200, y / 200
+    return x / 200, - y / 200
 
 
 async def update_all_clients(app: web.Application):
