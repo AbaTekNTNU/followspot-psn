@@ -1,11 +1,12 @@
-import psn
-import time
-import socket
-import json
-from aiohttp import web
-import logging
 import asyncio
+import json
+import logging
+import socket
+import time
 from dataclasses import dataclass
+
+import psn
+from aiohttp import web
 
 PSN_DEFAULT_UDP_PORT = 56565
 PSN_DEFAULT_UDP_MCAST_ADDRESS = "236.10.10.10"
@@ -13,13 +14,13 @@ PORT = 8000
 IP = "0.0.0.0"
 NUM_TRACKERS = 3
 
+
 # Internal state is a list of TrackerData objects
 @dataclass
 class TrackerData:
     id: int
     x: float
     y: float
-
 
     def to_tracker(self):
         tracker = psn.Tracker(self.id, f"Tracker {self.id}")
@@ -49,12 +50,14 @@ def get_elapsed_time_ms():
 
 
 def pic_to_scene_coords(x, y):
-    return x / 200, - y / 200
+    return x / 200, -y / 200
 
 
-async def update_all_clients(app: web.Application):
-    for ws in app["ws_clients"]:
-        await ws.send_str(trackers_to_json(app))
+async def update_all_clients(app: web.Application, ws: web.WebSocketResponse = None):
+    for ws_send in app["ws_clients"]:
+        if ws_send == ws:
+            continue
+        await ws_send.send_str(trackers_to_json(app))
 
 
 async def handle_websocket(request):
@@ -72,7 +75,7 @@ async def handle_websocket(request):
             if msg.type == web.WSMsgType.TEXT:
                 # Each message is a single tracker object
                 update_tracker(msg.data, request.app)
-                await update_all_clients(request.app)
+                await update_all_clients(request.app, ws)
 
             elif msg.type == web.WSMsgType.ERROR:
                 logging.error("ws connection closed with exception %s" % ws.exception())
@@ -101,8 +104,10 @@ async def broadcast_psn_data(app):
             trackers[tracker_data.id] = tracker_data.to_tracker()
         packets = encoder.encode_data(trackers, get_elapsed_time_ms())
         for packet in packets:
-            app["sock"].sendto(packet, (PSN_DEFAULT_UDP_MCAST_ADDRESS, PSN_DEFAULT_UDP_PORT))
-        await asyncio.sleep(0.033) # ~30fps
+            app["sock"].sendto(
+                packet, (PSN_DEFAULT_UDP_MCAST_ADDRESS, PSN_DEFAULT_UDP_PORT)
+            )
+        await asyncio.sleep(0.033)  # ~30fps
 
 
 async def background_tasks(app: web.Application):

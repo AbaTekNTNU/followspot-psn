@@ -23,7 +23,7 @@
 </script>
 
 <div class="relative">
-  <img src="/bg.png" alt="" bind:this={image} class="scale-50" />
+  <img src="/scene_drawing.png" alt="" bind:this={image} class="scale-50" />
   <div
     bind:this={parent}
     class="absolute inset-0 border border-red-500"
