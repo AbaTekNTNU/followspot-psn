@@ -68,7 +68,7 @@
   onpointerup={onPointerUp}
   onpointermove={onPointerMove}
   style={`transform: translate(${vis_x}px, ${vis_y}px)`}
-  class="absolute flex h-40 w-40 touch-none items-center justify-center rounded-full border-red-400 bg-red-400"
+  class="absolute flex h-40 w-40 touch-none select-none items-center justify-center rounded-full border-red-400 bg-red-400"
 >
   Tracker {id}
 </div>

@@ -4,6 +4,7 @@
   import Drag from "./Drag.svelte";
 
   let ws: WebSocket | null = $state(null);
+  let image: HTMLImageElement | null = $state(null);
 
   let parent: HTMLElement | null = $state(null);
 
@@ -21,15 +22,26 @@
   });
 </script>
 
-<div bind:this={parent} class="relative border border-red-500">
-  <img src="/scene_drawing.png" alt="moradi" class="absolute" />
-  {#each trackers as tracker}
-    <Drag
-      bind:id={tracker.id}
-      bind:x={tracker.x}
-      bind:y={tracker.y}
-      {ws}
-      {parent}
-    />
-  {/each}
+<div class="relative">
+  <img src="/bg.png" alt="" bind:this={image} class="scale-50" />
+  <div
+    bind:this={parent}
+    class="absolute inset-0 border border-red-500"
+    style={"width: " +
+      image?.getBoundingClientRect().width +
+      "px; height: " +
+      image?.getBoundingClientRect().height +
+      "px;" +
+      "transform: translate(50%, 50%);"}
+  >
+    {#each trackers as tracker}
+      <Drag
+        bind:id={tracker.id}
+        bind:x={tracker.x}
+        bind:y={tracker.y}
+        {ws}
+        {parent}
+      />
+    {/each}
+  </div>
 </div>
