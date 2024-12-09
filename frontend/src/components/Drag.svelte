@@ -4,7 +4,7 @@
     x: number;
     y: number;
     ws: WebSocket | null;
-    parent: HTMLElement;
+    parent: HTMLElement | null;
   };
 
   let {
@@ -22,10 +22,10 @@
   let vis_y = $state(0);
 
   $effect(() => {
-    vis_x = x + (parent.clientWidth ?? 0) / 2 - (element.clientWidth ?? 0) / 2;
+    vis_x = x + (parent?.clientWidth ?? 0) / 2 - (element.clientWidth ?? 0) / 2;
 
     vis_y =
-      y + (parent.clientHeight ?? 0) / 2 - (element.clientHeight ?? 0) / 2;
+      y + (parent?.clientHeight ?? 0) / 2 - (element.clientHeight ?? 0) / 2;
   });
 
   let capturedPointerId: number | null = $state(null);
@@ -45,12 +45,12 @@
     e.stopPropagation();
 
     x = Math.min(
-      parent.clientWidth / 2,
-      Math.max(-parent.clientWidth / 2, x + e.movementX),
+      (parent?.clientWidth ?? 0) / 2,
+      Math.max(-(parent?.clientWidth ?? 0) / 2, x + e.movementX),
     );
     y = Math.min(
-      parent.clientHeight / 2,
-      Math.max(-parent.clientHeight / 2, y + e.movementY),
+      (parent?.clientHeight ?? 0) / 2,
+      Math.max(-(parent?.clientHeight ?? 0) / 2, y + e.movementY),
     );
 
     if (ws) {
