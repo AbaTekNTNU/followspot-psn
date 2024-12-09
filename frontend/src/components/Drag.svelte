@@ -15,15 +15,18 @@
     parent,
   }: Props = $props();
 
-  let element: HTMLElement | null = $state(null);
+  let element: HTMLElement;
 
-  let vis_x = $derived(
-    x + (parent?.clientWidth ?? 0) / 2 - (element?.clientWidth ?? 0) / 2,
-  );
+  let vis_x = $state(0);
 
-  let vis_y = $derived(
-    y + (parent?.clientHeight ?? 0) / 2 - (element?.clientHeight ?? 0) / 2,
-  );
+  let vis_y = $state(0);
+
+  $effect(() => {
+    vis_x = x + (parent.clientWidth ?? 0) / 2 - (element.clientWidth ?? 0) / 2;
+
+    vis_y =
+      y + (parent.clientHeight ?? 0) / 2 - (element.clientHeight ?? 0) / 2;
+  });
 
   let capturedPointerId: number | null = $state(null);
 
