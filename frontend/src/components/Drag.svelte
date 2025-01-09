@@ -3,8 +3,9 @@
     id: number;
     x: number;
     y: number;
+    width: number;
+    height: number;
     ws: WebSocket | null;
-    parent: HTMLElement | null;
   };
 
   let {
@@ -12,7 +13,8 @@
     x = $bindable(),
     y = $bindable(),
     ws = $bindable(),
-    parent,
+    width = $bindable(),
+    height = $bindable(),
   }: Props = $props();
 
   let element: HTMLElement;
@@ -22,10 +24,9 @@
   let vis_y = $state(0);
 
   $effect(() => {
-    vis_x = x + (parent?.clientWidth ?? 0) / 2 - (element.clientWidth ?? 0) / 2;
+    vis_x = x + width / 2 - (element.clientWidth ?? 0) / 2;
 
-    vis_y =
-      y + (parent?.clientHeight ?? 0) / 2 - (element.clientHeight ?? 0) / 2;
+    vis_y = y + height / 2 - (element.clientHeight ?? 0) / 2;
   });
 
   let capturedPointerId: number | null = $state(null);
@@ -44,24 +45,16 @@
     e.preventDefault();
     e.stopPropagation();
 
-    x = Math.min(
-      (parent?.clientWidth ?? 0) / 2,
-      Math.max(-(parent?.clientWidth ?? 0) / 2, x + e.movementX),
-    );
-    y = Math.min(
-      (parent?.clientHeight ?? 0) / 2,
-      Math.max(-(parent?.clientHeight ?? 0) / 2, y + e.movementY),
-    );
+    x = Math.min(width / 2, Math.max(-width / 2, x + e.movementX));
+    y = Math.min(height / 2, Math.max(-height / 2, y + e.movementY));
 
-    if (ws) {
-      ws.send(
-        JSON.stringify({
-          id,
-          x,
-          y,
-        }),
-      );
-    }
+    ws?.send(
+      JSON.stringify({
+        id,
+        x,
+        y,
+      }),
+    );
   }
 </script>
 

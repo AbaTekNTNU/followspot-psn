@@ -9,11 +9,11 @@ import Container from "../components/Container.svelte";
     <meta name="generator" content={Astro.generator} />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
     />
     <title>Astro</title>
   </head>
-  <body class="flex h-dvh w-screen items-center justify-center">
+  <body class="flex h-dvh w-screen items-center justify-center overflow-hidden">
     <Container client:load />
   </body>
 </html>
