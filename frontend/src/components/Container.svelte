@@ -14,21 +14,36 @@
   let width = $state(0);
   let height = $state(0);
 
-  const resize = () => {
-    width = image?.getBoundingClientRect().width ?? 0;
-    height = image?.getBoundingClientRect().height ?? 0;
-  };
+  let debounce: number | null = $state(null);
 
-  onMount(() => {
+  const connect = () => {
     ws = new WebSocket("/ws");
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       for (const tracker of data) {
-        tracker.x *= width
-        tracker.y *= height
-        }
+        tracker.x *= width;
+        tracker.y *= height;
+      }
       trackers = data;
     };
+  };
+
+  const resize = () => {
+    width = image?.getBoundingClientRect().width ?? 0;
+    height = image?.getBoundingClientRect().height ?? 0;
+
+    if (debounce) {
+      clearTimeout(debounce);
+    }
+
+    debounce = setTimeout(() => {
+      connect();
+    }, 200);
+  };
+
+  onMount(() => {
+    connect();
 
     width = image?.getBoundingClientRect().width ?? 0;
     height = image?.getBoundingClientRect().height ?? 0;
