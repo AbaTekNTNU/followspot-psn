@@ -19,15 +19,15 @@
 
   let element: HTMLElement;
 
-  // let vis_x = $state(0);
+  let vis_x = $state(0);
 
-  // let vis_y = $state(0);
+  let vis_y = $state(0);
 
-  // $effect(() => {
-  //   vis_x = x + width / 2 - (element.clientWidth ?? 0) / 2;
+  $effect(() => {
+    vis_x = x - (element.clientWidth ?? 0) / 2;
 
-  //   vis_y = y + height / 2 - (element.clientHeight ?? 0) / 2;
-  // });
+    vis_y = y - (element.clientHeight ?? 0) / 2;
+  });
 
   let capturedPointerId: number | null = $state(null);
 
@@ -55,9 +55,9 @@
     const y_send = y / height;
     ws?.send(
       JSON.stringify({
-        id,
-        x_send,
-        y_send,
+        id: id,
+        x: x_send,
+        y: y_send,
       }),
     );
   }
@@ -68,8 +68,8 @@
   onpointerdown={onPointerDown}
   onpointerup={onPointerUp}
   onpointermove={onPointerMove}
-  style={`transform: translate(${x}px, ${y}px)`}
-  class="absolute flex h-40 w-40 touch-none select-none items-center justify-center rounded-full border-red-400 bg-red-400"
+  style={`transform: translate(${vis_x}px, ${vis_y}px)`}
+  class="absolute flex h-32 w-32 touch-none select-none items-center justify-center rounded-full border-red-400 bg-red-400"
 >
   Tracker {id}
 </div>
