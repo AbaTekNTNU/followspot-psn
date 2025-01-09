@@ -23,6 +23,10 @@
     ws = new WebSocket("/ws");
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      for (const tracker of data) {
+        tracker.x *= width
+        tracker.y *= height
+        }
       trackers = data;
     };
 

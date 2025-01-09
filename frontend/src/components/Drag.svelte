@@ -19,15 +19,15 @@
 
   let element: HTMLElement;
 
-  let vis_x = $state(0);
+  // let vis_x = $state(0);
 
-  let vis_y = $state(0);
+  // let vis_y = $state(0);
 
-  $effect(() => {
-    vis_x = x + width / 2 - (element.clientWidth ?? 0) / 2;
+  // $effect(() => {
+  //   vis_x = x + width / 2 - (element.clientWidth ?? 0) / 2;
 
-    vis_y = y + height / 2 - (element.clientHeight ?? 0) / 2;
-  });
+  //   vis_y = y + height / 2 - (element.clientHeight ?? 0) / 2;
+  // });
 
   let capturedPointerId: number | null = $state(null);
 
@@ -45,14 +45,19 @@
     e.preventDefault();
     e.stopPropagation();
 
-    x = Math.min(width / 2, Math.max(-width / 2, x + e.movementX));
-    y = Math.min(height / 2, Math.max(-height / 2, y + e.movementY));
+    // x = Math.min(width / 2, Math.max(-width / 2, x + e.movementX));
+    // y = Math.min(height / 2, Math.max(-height / 2, y + e.movementY));
 
+    x = Math.min(width, Math.max(0, x + e.movementX));
+    y = Math.min(height, Math.max(0, y + e.movementY));
+
+    const x_send = x / width;
+    const y_send = y / height;
     ws?.send(
       JSON.stringify({
         id,
-        x,
-        y,
+        x_send,
+        y_send,
       }),
     );
   }
@@ -63,7 +68,7 @@
   onpointerdown={onPointerDown}
   onpointerup={onPointerUp}
   onpointermove={onPointerMove}
-  style={`transform: translate(${vis_x}px, ${vis_y}px)`}
+  style={`transform: translate(${x}px, ${y}px)`}
   class="absolute flex h-40 w-40 touch-none select-none items-center justify-center rounded-full border-red-400 bg-red-400"
 >
   Tracker {id}

@@ -22,10 +22,23 @@ class TrackerData:
     x: float
     y: float
 
+    # Convert from internal coordinates to actual scene coordinates
+    # Internal representation is float values from 0 to 1 for x and y
+    # Thus we need to know the max size and aspect ratio of the scene
+    # x is the width of the scene, y is the depth, z is the height
+    def pic_to_scene_coords(x, y):
+        scene_width = 8.0
+        scene_depth = 6.3
+        tracker_height = 0.8 + 1.5 # Scene height + height of person
+
+        x_val = x * scene_width - (scene_width / 2)
+        y_val = y * scene_depth
+        return x_val, y_val, tracker_height
+
     def to_tracker(self):
         tracker = psn.Tracker(self.id, f"Tracker {self.id}")
-        x, y = pic_to_scene_coords(self.x, self.y)
-        tracker.set_pos(psn.Float3(x, y, 0))
+        x, y, z = self.pic_to_scene_coords(self.x, self.y)
+        tracker.set_pos(psn.Float3(x, y, z))
         return tracker
 
 
@@ -47,10 +60,6 @@ START_TIME = get_time_ms()
 
 def get_elapsed_time_ms():
     return get_time_ms() - START_TIME
-
-
-def pic_to_scene_coords(x, y):
-    return x / 200, -y / 200
 
 
 async def update_all_clients(app: web.Application, ws: web.WebSocketResponse = None):
