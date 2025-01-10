@@ -7,12 +7,15 @@ import weakref
 from dataclasses import dataclass
 
 import psn
+from pythonosc.osc_server import AsyncIOOSCUDPServer
+from pythonosc.dispatcher import Dispatcher
 from aiohttp import web, WSCloseCode
 
 PSN_DEFAULT_UDP_PORT = 56565
 PSN_DEFAULT_UDP_MCAST_ADDRESS = "236.10.10.10"
-PORT = 8000
+WEB_SERVER_PORT = 8000
 IP = "0.0.0.0"
+OSC_SERVER_PORT = 6969
 NUM_TRACKERS = 3
 
 
@@ -129,6 +132,19 @@ async def background_tasks(app: web.Application):
     await app["broadcast_psn_data"]
 
 
+def filter_handler(address, *args) -> None:
+    logging.debug(f"{address}: {args}")
+
+async def receive_osc_data(app):
+    dispatcher = Dispatcher()
+    dispatcher.map("/Tracker*", filter_handler)
+    server = AsyncIOOSCUDPServer((IP, OSC_SERVER_PORT), dispatcher, asyncio.get_event_loop())
+    transport, protocol = await server.create_serve_endpoint()
+    app["osc_transport"] = transport
+    yield
+    await transport.close()
+
+
 def create_app():
     app = web.Application()
     app.router.add_get("/", handle_root)
@@ -145,6 +161,7 @@ def create_app():
 
     app.on_shutdown.append(on_shutdown)
     app.cleanup_ctx.append(background_tasks)
+    app.cleanup_ctx.append(receive_osc_data)
 
     return app
 
@@ -152,4 +169,4 @@ def create_app():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     app = create_app()
-    web.run_app(app, host=IP, port=PORT)
+    web.run_app(app, host=IP, port=WEB_SERVER_PORT)

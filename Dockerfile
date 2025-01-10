@@ -31,7 +31,7 @@ RUN cp /psn-py/psn$(python3-config --extension-suffix) /output
 
 FROM alpine:3.20 AS final
 
-RUN apk add --no-cache python3 py3-aiohttp
+RUN apk add --no-cache python3 py3-aiohttp py3-python-osc
 
 
 COPY --from=backend /output /backend/psn.so
