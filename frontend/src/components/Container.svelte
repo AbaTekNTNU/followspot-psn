@@ -17,6 +17,10 @@
   let debounce: number | null = $state(null);
 
   const connect = () => {
+    if (ws) {
+      ws.close();
+    }
+
     ws = new WebSocket("/ws");
 
     ws.onmessage = (event) => {
