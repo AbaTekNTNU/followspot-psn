@@ -3,10 +3,11 @@ import json
 import logging
 import socket
 import time
+import weakref
 from dataclasses import dataclass
 
 import psn
-from aiohttp import web
+from aiohttp import web, WSCloseCode
 
 PSN_DEFAULT_UDP_PORT = 56565
 PSN_DEFAULT_UDP_MCAST_ADDRESS = "236.10.10.10"
@@ -88,17 +89,19 @@ async def handle_websocket(request):
 
             elif msg.type == web.WSMsgType.ERROR:
                 logging.error("ws connection closed with exception %s" % ws.exception())
-                print("ws connection closed with exception %s" % ws.exception())
+
     except Exception as e:
         logging.error(f"Websocket exception: {e}")
 
     finally:
         logging.debug("Websocket connection closing")
-        await ws.close()
-
-    request.app["ws_clients"].remove(ws)
+        request.app["ws_clients"].discard(ws)
 
     return ws
+
+async def on_shutdown(app):
+    for ws in set(app["ws_clients"]):
+        await ws.close(code=WSCloseCode.GOING_AWAY, message="Server shutdown")
 
 
 async def handle_root(request):
@@ -133,13 +136,14 @@ def create_app():
     app.router.add_static("/", "./static")
 
     # Setup app state
-    app["ws_clients"] = set()
+    app["ws_clients"] = weakref.WeakSet()
     app["trackers"] = {}
     app["sock"] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     for i in range(NUM_TRACKERS):
         app["trackers"][i] = TrackerData(i, 0, 0)
 
+    app.on_shutdown.append(on_shutdown)
     app.cleanup_ctx.append(background_tasks)
 
     return app
