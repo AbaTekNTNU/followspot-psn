@@ -3,18 +3,22 @@
     id: number;
     x: number;
     y: number;
+    z: number;
     width: number;
     height: number;
     ws: WebSocket | null;
+    selected: number;
   };
 
   let {
     id = $bindable(),
     x = $bindable(),
     y = $bindable(),
+    z = $bindable(),
     ws = $bindable(),
     width = $bindable(),
     height = $bindable(),
+    selected = $bindable(),
   }: Props = $props();
 
   let element: HTMLElement;
@@ -33,6 +37,7 @@
 
   function onPointerDown(e: PointerEvent) {
     element!.setPointerCapture(e.pointerId);
+    selected = id;
     capturedPointerId = e.pointerId;
   }
   function onPointerUp(e: PointerEvent) {
@@ -58,6 +63,7 @@
         id: id,
         x: x_send,
         y: y_send,
+        z: z,
       }),
     );
   }

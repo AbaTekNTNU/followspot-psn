@@ -2,17 +2,19 @@
   import { onMount } from "svelte";
   import type { TrackerData } from "../utils/types";
   import Drag from "./Drag.svelte";
+  import Slider from "./Slider.svelte";
 
   let ws: WebSocket | null = $state(null);
   let image: HTMLImageElement | null = $state(null);
 
   let trackers: TrackerData[] = $state([
-    { id: 1, x: 0, y: 0 },
-    { id: 2, x: 0, y: 0 },
+    { id: 1, x: 0, y: 0, z: 0 },
+    { id: 2, x: 0, y: 0, z: 0 },
   ]);
 
   let width = $state(0);
   let height = $state(0);
+  let selected = $state(0);
 
   let debounce: number | null = $state(null);
 
@@ -30,6 +32,7 @@
         tracker.y *= height;
       }
       trackers = data;
+      console.log(trackers);
     };
   };
 
@@ -55,24 +58,30 @@
 </script>
 
 <svelte:window onresize={resize} />
-<div class="relative">
-  <img
-    src="/scene_drawing.png"
-    alt=""
-    bind:this={image}
-    class="max-w-screen max-h-screen"
-    onload={resize}
-  />
-  <div class="absolute inset-0 border border-red-500">
-    {#each trackers as tracker}
-      <Drag
-        bind:id={tracker.id}
-        bind:x={tracker.x}
-        bind:y={tracker.y}
-        bind:width
-        bind:height
-        {ws}
-      />
-    {/each}
+<div class="flex h-screen items-center justify-center">
+  <div class="relative">
+    <img
+      src="/scene_drawing.png"
+      alt=""
+      bind:this={image}
+      class="max-w-screen max-h-screen"
+      onload={resize}
+    />
+    <div class="absolute inset-0 border border-red-500">
+      {#each trackers as tracker}
+        <Drag
+          bind:id={tracker.id}
+          bind:x={tracker.x}
+          bind:y={tracker.y}
+          bind:z={tracker.z}
+          bind:width
+          bind:height
+          bind:selected
+          {ws}
+        />
+      {/each}
+    </div>
   </div>
+
+  <Slider bind:trackers {ws} bind:height bind:width bind:selected />
 </div>

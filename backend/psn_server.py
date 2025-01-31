@@ -25,23 +25,26 @@ class TrackerData:
     id: int
     x: float
     y: float
+    z: float
 
     # Convert from internal coordinates to actual scene coordinates
     # Internal representation is float values from 0 to 1 for x and y
     # Thus we need to know the max size and aspect ratio of the scene
     # x is the width of the scene, y is the depth, z is the height
-    def pic_to_scene_coords(x, y):
+    def pic_to_scene_coords_3d(x, y, z) -> tuple[float, float, float]:
         scene_width = 8.0
         scene_depth = 6.3
-        tracker_height = 0.8 + 1.5 # Scene height + height of person
+        scene_height = 0.8
+        person_height = 1.5
 
         x_val = x * scene_width - (scene_width / 2)
         y_val = y * scene_depth
-        return x_val, y_val, tracker_height
+        z_val = scene_height + person_height
+        return x_val, y_val, z_val
 
     def to_tracker(self):
         tracker = psn.Tracker(self.id, f"Tracker {self.id}")
-        x, y, z = self.pic_to_scene_coords(self.x, self.y)
+        x, y, z = self.pic_to_scene_coords_3d(self.x, self.y, self.z)
         tracker.set_pos(psn.Float3(x, y, z))
         return tracker
 
@@ -87,6 +90,7 @@ async def handle_websocket(request):
         async for msg in ws:
             if msg.type == web.WSMsgType.TEXT:
                 # Each message is a single tracker object
+                logging.debug(f"Received ws update: {msg.data}")
                 update_tracker(msg.data, request.app)
                 await update_all_clients(request.app, ws)
 
@@ -133,7 +137,9 @@ async def background_tasks(app: web.Application):
 
 
 def filter_handler(address, *args) -> None:
-    logging.debug(f"{address}: {args}")
+    tracker_id = int(address.split("/")[-1])
+    x, y, z = args
+    logging.debug(f"id: {tracker_id} | x: {x}, y: {y}, z: {z}")
 
 async def receive_osc_data(app):
     dispatcher = Dispatcher()
@@ -157,7 +163,7 @@ def create_app():
     app["sock"] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     for i in range(NUM_TRACKERS):
-        app["trackers"][i] = TrackerData(i, 0, 0)
+        app["trackers"][i] = TrackerData(i, 0, 0, 0)
 
     app.on_shutdown.append(on_shutdown)
     app.cleanup_ctx.append(background_tasks)
