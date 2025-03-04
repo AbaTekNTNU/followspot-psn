@@ -32,6 +32,7 @@ class TrackerData:
     # Thus we need to know the max size and aspect ratio of the scene
     # x is the width of the scene, y is the depth, z is the height
     def pic_to_scene_coords_3d(x, y, z) -> tuple[float, float, float]:
+        full_scene_width = 13.46
         scene_width = 8.0
         scene_depth = 6.3
         scene_height = 0.8
@@ -136,14 +137,18 @@ async def background_tasks(app: web.Application):
     await app["broadcast_psn_data"]
 
 
-def filter_handler(address, *args) -> None:
+def filter_handler(address, fixed_args, *args) -> None:
     tracker_id = int(address.split("/")[-1])
     x, y, z = args
-    logging.debug(f"id: {tracker_id} | x: {x}, y: {y}, z: {z}")
+    app = fixed_args[0]
+    tracker = TrackerData(tracker_id, x, y, z)
+    logging.debug(f"OSC received: id: {tracker_id} | x: {x}, y: {y}, z: {z}")
+    app["trackers"][tracker_id] = tracker
+
 
 async def receive_osc_data(app):
     dispatcher = Dispatcher()
-    dispatcher.map("/Tracker*", filter_handler)
+    dispatcher.map("/Tracker*", filter_handler, app)
     server = AsyncIOOSCUDPServer((IP, OSC_SERVER_PORT), dispatcher, asyncio.get_event_loop())
     transport, protocol = await server.create_serve_endpoint()
     app["osc_transport"] = transport
