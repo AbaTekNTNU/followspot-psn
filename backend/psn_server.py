@@ -18,6 +18,27 @@ IP = "0.0.0.0"
 OSC_SERVER_PORT = 6969
 NUM_TRACKERS = 3
 
+FULL_SCENE_WIDTH = 13.46
+INNER_SCENE_WIDTH = 8.0
+
+ONLY_SCENE_DEPTH = 6.3
+FULL_ARENA_DEPTH = 16.0
+
+SCENE_WIDTH = FULL_SCENE_WIDTH
+SCENE_DEPTH = ONLY_SCENE_DEPTH
+
+X_MIN = -SCENE_WIDTH / 2
+X_MAX = SCENE_WIDTH / 2
+Y_MIN = 0.0
+Y_MAX = SCENE_DEPTH
+Z_MIN = 0.0
+Z_MAX = 4.0
+
+START_POSITION = (0.5, 0.5, 2)
+
+def map_range(value: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
+    return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
 
 # Internal state is a list of TrackerData objects
 @dataclass
@@ -27,25 +48,32 @@ class TrackerData:
     y: float
     z: float
 
-    # Convert from internal coordinates to actual scene coordinates
-    # Internal representation is float values from 0 to 1 for x and y
-    # Thus we need to know the max size and aspect ratio of the scene
-    # x is the width of the scene, y is the depth, z is the height
-    def pic_to_scene_coords_3d(x, y, z) -> tuple[float, float, float]:
-        full_scene_width = 13.46
-        scene_width = 8.0
-        scene_depth = 6.3
-        scene_height = 0.8
-        person_height = 1.5
+    @staticmethod
+    def internal_to_scene_coords_3d(x: float, y: float, z: float) -> tuple[float, float, float]:
+        """
+        Convert internal coordinates to scene coordinates
 
-        x_val = x * scene_width - (scene_width / 2)
-        y_val = y * scene_depth
-        z_val = scene_height + person_height
+        Internal coordinates are in the range [0, 1] for x and y with (0,0) at the top left
+        Scene coordinates are in the range [X_MIN, X_MAX] for x and [Y_MIN, YMAX] for y
+        """
+        x_val = map_range(x, 0, 1, X_MIN, X_MAX)
+        y_val = map_range(y, 0, 1, Y_MAX, Y_MIN) # Invert y axis
+        z_val = z
+
         return x_val, y_val, z_val
 
-    def to_tracker(self):
+    @staticmethod
+    def scene_to_internal_coords_3d(x: float, y: float, z: float) -> tuple[float, float, float]:
+        x_val = map_range(x, X_MIN, X_MAX, 0, 1)
+        y_val = map_range(y, Y_MAX, Y_MIN, 0, 1) # Invert y axis
+        z_val = z
+
+        return x_val, y_val, z_val
+
+    def to_tracker(self) -> psn.Tracker:
         tracker = psn.Tracker(self.id, f"Tracker {self.id}")
-        x, y, z = self.pic_to_scene_coords_3d(self.x, self.y, self.z)
+        x, y, z = TrackerData.internal_to_scene_coords_3d(self.x, self.y, self.z)
+        logging.debug(f"Tracker {self.id} at {x}, {y}, {z}")
         tracker.set_pos(psn.Float3(x, y, z))
         return tracker
 
@@ -70,11 +98,15 @@ def get_elapsed_time_ms():
     return get_time_ms() - START_TIME
 
 
-async def update_all_clients(app: web.Application, ws: web.WebSocketResponse = None):
+async def update_all_other_clients(app: web.Application, ws: web.WebSocketResponse = None):
     for ws_send in app["ws_clients"]:
         if ws_send == ws:
             continue
         await ws_send.send_str(trackers_to_json(app))
+
+async def update_all_clients(app: web.Application):
+    for ws in app["ws_clients"]:
+        await ws.send_str(trackers_to_json(app))
 
 
 async def handle_websocket(request):
@@ -93,7 +125,7 @@ async def handle_websocket(request):
                 # Each message is a single tracker object
                 logging.debug(f"Received ws update: {msg.data}")
                 update_tracker(msg.data, request.app)
-                await update_all_clients(request.app, ws)
+                await update_all_other_clients(request.app, ws)
 
             elif msg.type == web.WSMsgType.ERROR:
                 logging.error("ws connection closed with exception %s" % ws.exception())
@@ -139,11 +171,13 @@ async def background_tasks(app: web.Application):
 
 def filter_handler(address, fixed_args, *args) -> None:
     tracker_id = int(address.split("/")[-1])
-    x, y, z = args
+    x, y, z = TrackerData.scene_to_internal_coords_3d(*args)
+    logging.debug(f"OSC received: id: {tracker_id} at {x}, {y}, {z}")
     app = fixed_args[0]
     tracker = TrackerData(tracker_id, x, y, z)
-    logging.debug(f"OSC received: id: {tracker_id} | x: {x}, y: {y}, z: {z}")
     app["trackers"][tracker_id] = tracker
+
+    asyncio.ensure_future(update_all_clients(app))
 
 
 async def receive_osc_data(app):
@@ -168,7 +202,7 @@ def create_app():
     app["sock"] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     for i in range(NUM_TRACKERS):
-        app["trackers"][i] = TrackerData(i, 0, 0, 0)
+        app["trackers"][i] = TrackerData(i, *START_POSITION)
 
     app.on_shutdown.append(on_shutdown)
     app.cleanup_ctx.append(background_tasks)
@@ -178,6 +212,6 @@ def create_app():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     app = create_app()
     web.run_app(app, host=IP, port=WEB_SERVER_PORT)

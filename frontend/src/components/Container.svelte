@@ -61,7 +61,7 @@
 <div class="flex h-screen items-center justify-center">
   <div class="relative">
     <img
-      src="/scene_drawing.png"
+      src="/revy25_scene_psn_tekst.png"
       alt=""
       bind:this={image}
       class="max-w-screen max-h-screen"

@@ -30,16 +30,15 @@
     );
   };
 
-  let z_viz = $derived((trackers[selected].z * 2).toFixed(2))
+  let z_viz = $derived((trackers[selected].z).toFixed(2))
 </script>
 
-<div>
-  <label for="z">Z</label>
+<div class="slider-container">
   <input
     type="range"
     id="z"
     min="0"
-    max="1"
+    max="4"
     step="0.01"
     oninput="{onchange}"
     bind:value={trackers[selected].z}
@@ -48,12 +47,38 @@
 </div>
 
 <style>
+  .slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   input {
     writing-mode: vertical-lr;
     direction: rtl;
-    appearance: slider-vertical;
-    width: 26px;
+    appearance: none;
+    width: 75px;
     height: 50%;
     vertical-align: bottom;
   }
+
+
+    /* WebKit Browsers (Chrome, Safari, Edge) */
+  input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 50px; /* Larger size */
+    height: 50px;
+    background: red; /* Customize color */
+    margin-left: -22px; /* Center the thumb */
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  input::-webkit-slider-runnable-track {
+    background: lightgray; /* Customize track */
+    width: 6px;
+    border-radius: 3px;
+  }
+
 </style>
