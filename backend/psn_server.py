@@ -18,23 +18,43 @@ IP = "0.0.0.0"
 OSC_SERVER_PORT = 6969
 NUM_TRACKERS = 3
 
-FULL_SCENE_WIDTH = 13.46
-INNER_SCENE_WIDTH = 8.0
+class SceneDimensions:
+    x_min: float
+    x_max: float
+    y_min: float
+    y_max: float
+    z_min: float
+    z_max: float
 
-ONLY_SCENE_DEPTH = 6.3
-FULL_ARENA_DEPTH = 16.0
+    dimension_name: str
 
-SCENE_WIDTH = FULL_SCENE_WIDTH
-SCENE_DEPTH = ONLY_SCENE_DEPTH
+    dimension_map = {
+        "scene_only": (-13 / 2, 13 / 2, 0, 6.3 , 0, 4),
+        "full_arena": (-13 / 2, 13 / 2, -9.7, 6.3 , 0, 4)
+    }
 
-X_MIN = -SCENE_WIDTH / 2
-X_MAX = SCENE_WIDTH / 2
-Y_MIN = 0.0
-Y_MAX = SCENE_DEPTH
-Z_MIN = 0.0
-Z_MAX = 4.0
+    def __init__(self):
+        self.set_scene_only_dimensions()
 
-START_POSITION = (0.5, 0.5, 2)
+    def _set_new_dimensions(self, x_min, x_max, y_min, y_max, z_min, z_max):
+        self.x_min = x_min
+        self.x_max = x_max
+        self.y_min = y_min
+        self.y_max = y_max
+        self.z_min = z_min
+        self.z_max = z_max
+
+    def set_scene_only_dimensions(self):
+        self._set_new_dimensions(*SceneDimensions.dimension_map["scene_only"])
+        self.dimension_name = "scene_only"
+
+    def set_full_arena_dimensions(self):
+        self._set_new_dimensions(*SceneDimensions.dimension_map["full_arena"])
+        self.dimension_name = "full_arena"
+
+
+
+START_POSITION_INTERNAL = (0.5, 0.5, 2)
 
 def map_range(value: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
     return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
@@ -49,31 +69,30 @@ class TrackerData:
     z: float
 
     @staticmethod
-    def internal_to_scene_coords_3d(x: float, y: float, z: float) -> tuple[float, float, float]:
+    def internal_to_scene_coords_3d(x: float, y: float, z: float, dim: SceneDimensions) -> tuple[float, float, float]:
         """
         Convert internal coordinates to scene coordinates
 
         Internal coordinates are in the range [0, 1] for x and y with (0,0) at the top left
         Scene coordinates are in the range [X_MIN, X_MAX] for x and [Y_MIN, YMAX] for y
         """
-        x_val = map_range(x, 0, 1, X_MIN, X_MAX)
-        y_val = map_range(y, 0, 1, Y_MAX, Y_MIN) # Invert y axis
+        x_val = map_range(x, 0, 1, dim.x_min, dim.x_max)
+        y_val = map_range(y, 0, 1, dim.y_max, dim.y_min) # Invert y axis
         z_val = z
 
         return x_val, y_val, z_val
 
     @staticmethod
-    def scene_to_internal_coords_3d(x: float, y: float, z: float) -> tuple[float, float, float]:
-        x_val = map_range(x, X_MIN, X_MAX, 0, 1)
-        y_val = map_range(y, Y_MAX, Y_MIN, 0, 1) # Invert y axis
+    def scene_to_internal_coords_3d(x: float, y: float, z: float, dim: SceneDimensions) -> tuple[float, float, float]:
+        x_val = map_range(x, dim.x_min, dim.x_max, 0, 1)
+        y_val = map_range(y, dim.y_max, dim.y_min, 0, 1) # Invert y axis
         z_val = z
 
         return x_val, y_val, z_val
 
-    def to_tracker(self) -> psn.Tracker:
+    def to_tracker(self, dim: SceneDimensions) -> psn.Tracker:
         tracker = psn.Tracker(self.id, f"Tracker {self.id}")
-        x, y, z = TrackerData.internal_to_scene_coords_3d(self.x, self.y, self.z)
-        logging.debug(f"Tracker {self.id} at {x}, {y}, {z}")
+        x, y, z = TrackerData.internal_to_scene_coords_3d(self.x, self.y, self.z, dim)
         tracker.set_pos(psn.Float3(x, y, z))
         return tracker
 
@@ -108,6 +127,9 @@ async def update_all_clients(app: web.Application):
     for ws in app["ws_clients"]:
         await ws.send_str(trackers_to_json(app))
 
+async def update_all_clients_bg(app: web.Application):
+    for ws in app["ws_clients"]:
+        await ws.send_str(json.dumps({"refresh": True}))
 
 async def handle_websocket(request):
     ws = web.WebSocketResponse()
@@ -147,13 +169,37 @@ async def on_shutdown(app):
 async def handle_root(request):
     return web.FileResponse("./static/index.html")
 
+async def handle_background_image(request):
+    if request.app["scene_dimensions"].dimension_name == "full_arena":
+        return web.FileResponse("./static/scene_and_crowd.png")
+    elif request.app["scene_dimensions"].dimension_name == "scene_only":
+        return web.FileResponse("./static/scene_only.png")
+    return web.Response(text="Incorrect server scende dimension state", status=500)
+
+async def handle_set_mode(request):
+    try:
+        data = request.data = await request.json()
+        mode = data["mode"]
+        if mode == "crowd":
+            request.app["scene_dimensions"].set_full_arena_dimensions()
+        elif mode == "scene":
+            request.app["scene_dimensions"].set_scene_only_dimensions()
+        else:
+            return web.Response(text="Invalid mode", status=400)
+
+        await update_all_clients_bg(request.app)
+
+        return web.Response(text="OK")
+    except Exception as e:
+        return web.Response(text=f"Error: {e}", status=400)
+
 
 async def broadcast_psn_data(app):
     encoder = psn.Encoder("Server 1")
     while True:
         trackers = {}
         for tracker_data in app["trackers"].values():
-            trackers[tracker_data.id] = tracker_data.to_tracker()
+            trackers[tracker_data.id] = tracker_data.to_tracker(app["scene_dimensions"])
         packets = encoder.encode_data(trackers, get_elapsed_time_ms())
         for packet in packets:
             app["sock"].sendto(
@@ -169,11 +215,11 @@ async def background_tasks(app: web.Application):
     await app["broadcast_psn_data"]
 
 
-def filter_handler(address, fixed_args, *args) -> None:
-    tracker_id = int(address.split("/")[-1])
-    x, y, z = TrackerData.scene_to_internal_coords_3d(*args)
-    logging.debug(f"OSC received: id: {tracker_id} at {x}, {y}, {z}")
+def osc_tracker_updater(address, fixed_args, *args) -> None:
     app = fixed_args[0]
+    tracker_id = int(address.split("/")[-1])
+    x, y, z = TrackerData.scene_to_internal_coords_3d(*args, app["scene_dimensions"])
+    logging.debug(f"OSC received: id: {tracker_id} at {x}, {y}, {z}")
     tracker = TrackerData(tracker_id, x, y, z)
     app["trackers"][tracker_id] = tracker
 
@@ -182,7 +228,7 @@ def filter_handler(address, fixed_args, *args) -> None:
 
 async def receive_osc_data(app):
     dispatcher = Dispatcher()
-    dispatcher.map("/Tracker*", filter_handler, app)
+    dispatcher.map("/Tracker*", osc_tracker_updater, app)
     server = AsyncIOOSCUDPServer((IP, OSC_SERVER_PORT), dispatcher, asyncio.get_event_loop())
     transport, protocol = await server.create_serve_endpoint()
     app["osc_transport"] = transport
@@ -194,15 +240,19 @@ def create_app():
     app = web.Application()
     app.router.add_get("/", handle_root)
     app.router.add_get("/ws", handle_websocket)
+    app.router.add_get("/background_image", handle_background_image)
+    app.router.add_post("/mode", handle_set_mode)
     app.router.add_static("/", "./static")
 
     # Setup app state
+    # All app state needs to be mutable as changing state variables directly while running is not supported
     app["ws_clients"] = weakref.WeakSet()
     app["trackers"] = {}
     app["sock"] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    app["scene_dimensions"] = SceneDimensions()
 
     for i in range(NUM_TRACKERS):
-        app["trackers"][i] = TrackerData(i, *START_POSITION)
+        app["trackers"][i] = TrackerData(i, *START_POSITION_INTERNAL)
 
     app.on_shutdown.append(on_shutdown)
     app.cleanup_ctx.append(background_tasks)
@@ -212,6 +262,6 @@ def create_app():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     app = create_app()
     web.run_app(app, host=IP, port=WEB_SERVER_PORT)

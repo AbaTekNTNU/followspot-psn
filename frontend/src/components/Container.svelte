@@ -27,12 +27,20 @@
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      for (const tracker of data) {
-        tracker.x *= width;
-        tracker.y *= height;
+      console.log(data)
+
+      if (data.refresh && image) {
+          image.src = `/background_image?${Math.random()}`;
+        return;
       }
-      trackers = data;
-      console.log(trackers);
+
+      else {
+        for (const tracker of data) {
+          tracker.x *= width;
+          tracker.y *= height;
+        }
+        trackers = data;
+      }
     };
   };
 
@@ -61,7 +69,7 @@
 <div class="flex h-screen items-center justify-center">
   <div class="relative">
     <img
-      src="/revy25_scene_psn_tekst.png"
+      src="/background_image?342038402"
       alt=""
       bind:this={image}
       class="max-w-screen max-h-screen"
