@@ -1,22 +1,26 @@
 import asyncio
 import json
 import logging
+import os
 import socket
 import time
 import weakref
 from dataclasses import dataclass
 
 import psn
-from pythonosc.osc_server import AsyncIOOSCUDPServer
+from aiohttp import WSCloseCode, web
 from pythonosc.dispatcher import Dispatcher
-from aiohttp import web, WSCloseCode
+from pythonosc.osc_server import AsyncIOOSCUDPServer
 
-PSN_DEFAULT_UDP_PORT = 56565
-PSN_DEFAULT_UDP_MCAST_ADDRESS = "236.10.10.10"
-WEB_SERVER_PORT = 8000
+PSN_DEFAULT_UDP_PORT = os.getenv("PSN_DEFAULT_UDP_PORT", 56565)
+PSN_DEFAULT_UDP_MCAST_ADDRESS = os.getenv(
+    "PSN_DEFAULT_UDP_MCAST_ADDRESS", "236.10.10.10"
+)
+WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 8000))
 IP = "0.0.0.0"
-OSC_SERVER_PORT = 9000
-NUM_TRACKERS = 3
+OSC_SERVER_PORT = int(os.getenv("OSC_SERVER_PORT", 9000))
+NUM_TRACKERS = int(os.getenv("NUM_TRACKERS", 3))
+
 
 class SceneDimensions:
     x_min: float
@@ -29,8 +33,8 @@ class SceneDimensions:
     dimension_name: str
 
     dimension_map = {
-        "scene_only": (-13 / 2, 13 / 2, 0, 6.3 , 0, 4),
-        "full_arena": (-13 / 2, 13 / 2, -9.7, 6.3 , 0, 4)
+        "scene_only": (-13 / 2, 13 / 2, 0, 6.3, 0, 4),
+        "full_arena": (-13 / 2, 13 / 2, -9.7, 6.3, 0, 4),
     }
 
     def __init__(self):
@@ -53,10 +57,12 @@ class SceneDimensions:
         self.dimension_name = "full_arena"
 
 
-
 START_POSITION_INTERNAL = (0.5, 0.5, 2)
 
-def map_range(value: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
+
+def map_range(
+    value: float, in_min: float, in_max: float, out_min: float, out_max: float
+) -> float:
     return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 
@@ -69,7 +75,9 @@ class TrackerData:
     z: float
 
     @staticmethod
-    def internal_to_scene_coords_3d(x: float, y: float, z: float, dim: SceneDimensions) -> tuple[float, float, float]:
+    def internal_to_scene_coords_3d(
+        x: float, y: float, z: float, dim: SceneDimensions
+    ) -> tuple[float, float, float]:
         """
         Convert internal coordinates to scene coordinates
 
@@ -77,15 +85,17 @@ class TrackerData:
         Scene coordinates are in the range [X_MIN, X_MAX] for x and [Y_MIN, YMAX] for y
         """
         x_val = map_range(x, 0, 1, dim.x_min, dim.x_max)
-        y_val = map_range(y, 0, 1, dim.y_max, dim.y_min) # Invert y axis
+        y_val = map_range(y, 0, 1, dim.y_max, dim.y_min)  # Invert y axis
         z_val = z
 
         return x_val, y_val, z_val
 
     @staticmethod
-    def scene_to_internal_coords_3d(x: float, y: float, z: float, dim: SceneDimensions) -> tuple[float, float, float]:
+    def scene_to_internal_coords_3d(
+        x: float, y: float, z: float, dim: SceneDimensions
+    ) -> tuple[float, float, float]:
         x_val = map_range(x, dim.x_min, dim.x_max, 0, 1)
-        y_val = map_range(y, dim.y_max, dim.y_min, 0, 1) # Invert y axis
+        y_val = map_range(y, dim.y_max, dim.y_min, 0, 1)  # Invert y axis
         z_val = z
 
         return x_val, y_val, z_val
@@ -117,19 +127,24 @@ def get_elapsed_time_ms():
     return get_time_ms() - START_TIME
 
 
-async def update_all_other_clients(app: web.Application, ws: web.WebSocketResponse = None):
+async def update_all_other_clients(
+    app: web.Application, ws: web.WebSocketResponse = None
+):
     for ws_send in app["ws_clients"]:
         if ws_send == ws:
             continue
         await ws_send.send_str(trackers_to_json(app))
 
+
 async def update_all_clients(app: web.Application):
     for ws in app["ws_clients"]:
         await ws.send_str(trackers_to_json(app))
 
+
 async def update_all_clients_bg(app: web.Application):
     for ws in app["ws_clients"]:
         await ws.send_str(json.dumps({"refresh": True}))
+
 
 async def handle_websocket(request):
     ws = web.WebSocketResponse()
@@ -161,6 +176,7 @@ async def handle_websocket(request):
 
     return ws
 
+
 async def on_shutdown(app):
     for ws in set(app["ws_clients"]):
         await ws.close(code=WSCloseCode.GOING_AWAY, message="Server shutdown")
@@ -169,12 +185,14 @@ async def on_shutdown(app):
 async def handle_root(request):
     return web.FileResponse("./static/index.html")
 
+
 async def handle_background_image(request):
     if request.app["scene_dimensions"].dimension_name == "full_arena":
         return web.FileResponse("./static/scene_and_crowd.png")
     elif request.app["scene_dimensions"].dimension_name == "scene_only":
         return web.FileResponse("./static/scene_only.png")
     return web.Response(text="Incorrect server scende dimension state", status=500)
+
 
 async def handle_set_mode(request):
     try:
@@ -192,6 +210,7 @@ async def handle_set_mode(request):
         return web.Response(text="OK")
     except Exception as e:
         return web.Response(text=f"Error: {e}", status=400)
+
 
 async def handlet_get_mode(request):
     return web.json_response({"mode": request.app["scene_dimensions"].dimension_name})
@@ -232,7 +251,9 @@ def osc_tracker_updater(address, fixed_args, *args) -> None:
 async def receive_osc_data(app):
     dispatcher = Dispatcher()
     dispatcher.map("/Tracker*", osc_tracker_updater, app)
-    server = AsyncIOOSCUDPServer((IP, OSC_SERVER_PORT), dispatcher, asyncio.get_event_loop())
+    server = AsyncIOOSCUDPServer(
+        (IP, OSC_SERVER_PORT), dispatcher, asyncio.get_event_loop()
+    )
     transport, protocol = await server.create_serve_endpoint()
     app["osc_transport"] = transport
     yield
