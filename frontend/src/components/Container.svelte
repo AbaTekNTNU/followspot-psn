@@ -66,7 +66,8 @@
 </script>
 
 <svelte:window onresize={resize} />
-<div class="flex h-screen items-center justify-center">
+<div class="flex h-screen items-center justify-center w-screen">
+  <div class="w-20 mr-auto"></div>
   <div class="relative">
     <img
       src="/background_image?342038402"
