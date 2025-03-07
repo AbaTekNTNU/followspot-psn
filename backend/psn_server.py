@@ -180,9 +180,9 @@ async def handle_set_mode(request):
     try:
         data = request.data = await request.json()
         mode = data["mode"]
-        if mode == "crowd":
+        if mode == "full_arena":
             request.app["scene_dimensions"].set_full_arena_dimensions()
-        elif mode == "scene":
+        elif mode == "scene_only":
             request.app["scene_dimensions"].set_scene_only_dimensions()
         else:
             return web.Response(text="Invalid mode", status=400)
@@ -192,6 +192,9 @@ async def handle_set_mode(request):
         return web.Response(text="OK")
     except Exception as e:
         return web.Response(text=f"Error: {e}", status=400)
+
+async def handlet_get_mode(request):
+    return web.json_response({"mode": request.app["scene_dimensions"].dimension_name})
 
 
 async def broadcast_psn_data(app):
@@ -242,6 +245,7 @@ def create_app():
     app.router.add_get("/ws", handle_websocket)
     app.router.add_get("/background_image", handle_background_image)
     app.router.add_post("/mode", handle_set_mode)
+    app.router.add_get("/mode", handlet_get_mode)
     app.router.add_static("/", "./static")
 
     # Setup app state
