@@ -63,6 +63,8 @@
     width = image?.getBoundingClientRect().width ?? 0;
     height = image?.getBoundingClientRect().height ?? 0;
   });
+
+
 </script>
 
 <svelte:window onresize={resize} />

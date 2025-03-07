@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { TrackerData } from "$lib/utils/types";
-  import { onMount } from "svelte";
   import Modal from "./Modal.svelte";
 
   type Props = {
@@ -56,10 +55,8 @@
   let z_viz = $derived(trackers[selected].z.toFixed(2));
 </script>
 
-<Modal />
 <div class="slider-container ml-auto">
-  <button class="bg-red-400 rounded-md p-2 mb-24"
-    onclick={buttonAction}>Change mode</button>
+  <Modal action={buttonAction} />
   <input
     type="range"
     id="z"
