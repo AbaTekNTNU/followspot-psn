@@ -4,14 +4,15 @@
 
   type Props = {
     text: string;
-    action: () => void;
+    action: (arg: number) => void;
+    value: number;
   };
 
-  let { action, text }: Props = $props();
+  let { action, text, value = $bindable() }: Props = $props();
 </script>
 
 <div>
   <h2>{text}</h2>
-  <Input placeholder={"1"} type="tel" />
-  <Button onclick={action}>Submit</Button>
+  <Input placeholder={"1"} type="tel" bind:value />
+  <Button onclick={() => action(value)}>Submit</Button>
 </div>
