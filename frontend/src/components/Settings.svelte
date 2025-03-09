@@ -10,7 +10,7 @@
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: arg,
+        id: Number(arg),
       }),
     });
 
@@ -24,7 +24,7 @@
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: arg,
+        id: Number(arg),
       }),
     });
     console.log(response);
