@@ -27,6 +27,7 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwind-merge": "^3.0.2",
     "tailwind-variants": "^1.0.0",
+    "tailwindcss-animate": "^1.0.7",
     "vaul-svelte": "^0.3.2"
   },
   "pnpm": {
