@@ -247,6 +247,35 @@ def osc_tracker_updater(address, fixed_args, *args) -> None:
 
     asyncio.ensure_future(update_all_clients(app))
 
+async def handle_add_tracker(request):
+    # Add tracker with id from request
+    try:
+        trackers = request.app["trackers"]
+        request_data = await request.json()
+        tracker_id = request_data["id"]
+        if tracker_id in trackers:
+            return web.Response(text="Tracker already exists", status=400)
+
+        trackers[tracker_id] = TrackerData(tracker_id, *START_POSITION_INTERNAL)
+        return web.Response(text="OK", status=200)
+    except Exception as e:
+        return web.Response(text=f"Error: {e}", status=400)
+
+
+
+async def handler_delete_tracker(request):
+    # Delete tracker with id from request
+    try:
+        trackers = request.app["trackers"]
+        request_data = await request.json()
+        tracker_id = request_data["id"]
+        if tracker_id not in trackers:
+            return web.Response(text="Tracker does not exist", status=400)
+
+        del trackers[tracker_id]
+        return web.Response(text="OK", status=200)
+    except Exception as e:
+        return web.Response(text=f"Error: {e}", status=400)
 
 async def receive_osc_data(app):
     dispatcher = Dispatcher()
@@ -265,8 +294,13 @@ def create_app():
     app.router.add_get("/", handle_root)
     app.router.add_get("/ws", handle_websocket)
     app.router.add_get("/background_image", handle_background_image)
+
     app.router.add_post("/mode", handle_set_mode)
     app.router.add_get("/mode", handlet_get_mode)
+
+    app.router.add_post("/tracker", handle_add_tracker)
+    app.router.add_delete("/tracker", handler_delete_tracker)
+
     app.router.add_static("/", "./static")
 
     # Setup app state
