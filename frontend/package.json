@@ -19,10 +19,15 @@
     "typescript": "^5.8.2"
   },
   "devDependencies": {
+    "bits-ui": "0.22.0",
+    "clsx": "^2.1.1",
     "prettier": "^3.5.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-svelte": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.11"
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "tailwind-merge": "^3.0.2",
+    "tailwind-variants": "^1.0.0",
+    "vaul-svelte": "^0.3.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

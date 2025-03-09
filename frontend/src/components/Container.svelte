@@ -3,6 +3,7 @@
   import type { TrackerData } from "../utils/types";
   import Drag from "./Drag.svelte";
   import Slider from "./Slider.svelte";
+  import Settings from "./Settings.svelte";
 
   let ws: WebSocket | null = $state(null);
   let image: HTMLImageElement | null = $state(null);
@@ -65,7 +66,9 @@
 
 <svelte:window onresize={resize} />
 <div class="flex h-screen w-screen items-center justify-center">
-  <div class="mr-auto w-20"></div>
+  <div class="mr-auto w-20">
+    <Settings />
+  </div>
   <div class="relative">
     <img
       src="/background_image?342038402"

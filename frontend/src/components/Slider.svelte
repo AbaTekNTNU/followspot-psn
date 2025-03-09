@@ -20,15 +20,19 @@
 
   let arena_state: "full_arena" | "scene_only" = $state("scene_only");
 
+  let tracker = trackers.find((ball) => {
+    ball.id === selected;
+  });
+
   const onchange = () => {
-    const x_send = trackers[selected].x / width;
-    const y_send = trackers[selected].y / height;
+    const x_send = tracker!.x / width;
+    const y_send = tracker!.y / height;
     ws?.send(
       JSON.stringify({
-        id: trackers[selected].id,
+        id: tracker!.id,
         x: x_send,
         y: y_send,
-        z: trackers[selected].z,
+        z: tracker!.z,
       }),
     );
   };
@@ -52,7 +56,7 @@
     });
   };
 
-  let z_viz = $derived(trackers[selected].z.toFixed(2));
+  let z_viz = $derived(tracker?.z.toFixed(2));
 </script>
 
 <div class="slider-container ml-auto">
@@ -64,7 +68,6 @@
     max="4"
     step="0.01"
     oninput={onchange}
-    bind:value={trackers[selected].z}
   />
   <output for="z">{z_viz} m</output>
 </div>
