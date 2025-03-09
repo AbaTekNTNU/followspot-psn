@@ -2,6 +2,7 @@
   import * as Drawer from "$lib/components/ui/drawer/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import TrackerSetting from "./TrackerSetting.svelte";
+  import { toast } from "svelte-sonner";
 
   const addTracker = async (arg: number) => {
     const response = await fetch("/tracker", {
@@ -14,7 +15,9 @@
       }),
     });
 
-    console.log(response);
+    if (!response.ok) {
+      toast.error("Could not add tracker");
+    }
   };
 
   const deleteTracker = async (arg: number) => {
@@ -27,7 +30,9 @@
         id: Number(arg),
       }),
     });
-    console.log(response);
+    if (!response.ok) {
+      toast.error("Could not delete tracker");
+    }
   };
 
   let id = $state(0);
@@ -35,7 +40,7 @@
 
 <Drawer.Root>
   <Drawer.Trigger asChild let:builder>
-    <Button builders={[builder]} variant="outline">Settings</Button>
+    <Button builders={[builder]} variant="secondary">Settings</Button>
   </Drawer.Trigger>
   <Drawer.Content>
     <Drawer.Header>

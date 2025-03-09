@@ -62,7 +62,7 @@
 </script>
 
 <svelte:window onresize={resize} />
-<div class="flex h-screen w-screen items-center justify-center">
+<div class="flex h-screen w-screen items-center justify-center gap-2 py-2">
   <div class="mr-auto w-20">
     <Settings />
   </div>

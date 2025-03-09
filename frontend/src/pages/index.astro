@@ -1,6 +1,7 @@
 ---
 import Container from "../components/Container.svelte";
 import "$lib/styles/app.css";
+import { Toaster } from "$lib/components/ui/sonner/index.js";
 ---
 
 <html lang="en">
@@ -15,6 +16,7 @@ import "$lib/styles/app.css";
     <title>Followspot</title>
   </head>
   <body class="flex h-dvh w-screen items-center justify-center overflow-hidden">
+    <Toaster client:load />
     <Container client:load />
   </body>
 </html>

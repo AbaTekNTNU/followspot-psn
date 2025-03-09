@@ -61,7 +61,7 @@
   let z_viz = $derived(tracker?.z.toFixed(2));
 </script>
 
-<div class="slider-container ml-auto">
+<div class="slider-container ml-auto w-20">
   <Modal action={buttonAction} />
   {#if tracker}
     <input

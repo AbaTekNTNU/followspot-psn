@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { cn } from "$lib/utils";
+
   type Props = {
     id: number;
     x: number;
@@ -75,8 +77,12 @@
   onpointerup={onPointerUp}
   onpointermove={onPointerMove}
   style={`transform: translate(${vis_x}px, ${vis_y}px)`}
-  class={`absolute flex h-24 w-24 touch-none select-none items-center justify-center rounded-full
-  ${selected === id ? "border-green-400 bg-green-400 z-50" : "border-red-400 bg-red-400"}`}
+  class={cn(
+    "absolute flex h-24 w-24 touch-none select-none items-center justify-center rounded-full",
+    selected === id
+      ? "z-50 border-green-400 bg-green-400"
+      : "border-red-400 bg-red-400",
+  )}
 >
   Tracker {id}
 </div>
