@@ -7,7 +7,7 @@ services:
       PSN_DEFAULT_UDP_MCAST_ADDRESS: "236.10.10.10"
       WEB_SERVER_PORT: 8000
       OSC_SERVER_PORT: 9000
-      NUM_TRACKERS: 3
+      NUM_TRACKERS: 0
     volumes:
       - spot-data:/data
 

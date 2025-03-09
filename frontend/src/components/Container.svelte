@@ -8,10 +8,7 @@
   let ws: WebSocket | null = $state(null);
   let image: HTMLImageElement | null = $state(null);
 
-  let trackers: TrackerData[] = $state([
-    { id: 1, x: 0, y: 0, z: 0 },
-    { id: 2, x: 0, y: 0, z: 0 },
-  ]);
+  let trackers: TrackerData[] = $state([]);
 
   let width = $state(0);
   let height = $state(0);
