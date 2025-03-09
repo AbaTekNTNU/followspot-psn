@@ -10,7 +10,7 @@
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: 6,
+        id: 4,
       }),
     });
 
@@ -24,13 +24,12 @@
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: 6,
+        id: 4,
       }),
     });
     console.log(response);
   };
 </script>
-
 
 <Drawer.Root>
   <Drawer.Trigger asChild let:builder>
