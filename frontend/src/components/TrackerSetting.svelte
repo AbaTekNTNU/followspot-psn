@@ -13,6 +13,6 @@
 
 <div>
   <h2>{text}</h2>
-  <Input placeholder={"1"} type="tel" bind:value />
+  <Input placeholder={"1"} bind:value required />
   <Button onclick={() => action(value)}>Submit</Button>
 </div>
