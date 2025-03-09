@@ -76,7 +76,7 @@
   onpointermove={onPointerMove}
   style={`transform: translate(${vis_x}px, ${vis_y}px)`}
   class={`absolute flex h-24 w-24 touch-none select-none items-center justify-center rounded-full
-  ${selected === id ? 'bg-green-400 border-green-400' : 'bg-red-400 border-red-400'}`}
+  ${selected === id ? "border-green-400 bg-green-400" : "border-red-400 bg-red-400"}`}
 >
   Tracker {id}
 </div>

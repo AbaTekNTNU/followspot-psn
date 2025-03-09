@@ -27,14 +27,12 @@
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log(data)
+      console.log(data);
 
       if (data.refresh && image) {
-          image.src = `/background_image?${Math.random()}`;
+        image.src = `/background_image?${Math.random()}`;
         return;
-      }
-
-      else {
+      } else {
         for (const tracker of data) {
           tracker.x *= width;
           tracker.y *= height;
@@ -63,13 +61,11 @@
     width = image?.getBoundingClientRect().width ?? 0;
     height = image?.getBoundingClientRect().height ?? 0;
   });
-
-
 </script>
 
 <svelte:window onresize={resize} />
-<div class="flex h-screen items-center justify-center w-screen">
-  <div class="w-20 mr-auto"></div>
+<div class="flex h-screen w-screen items-center justify-center">
+  <div class="mr-auto w-20"></div>
   <div class="relative">
     <img
       src="/background_image?342038402"
