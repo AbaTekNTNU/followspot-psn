@@ -257,6 +257,8 @@ async def handle_add_tracker(request):
             return web.Response(text="Tracker already exists", status=400)
 
         trackers[tracker_id] = TrackerData(tracker_id, *START_POSITION_INTERNAL)
+        await update_all_clients(request.app)
+
         return web.Response(text="OK", status=200)
     except Exception as e:
         return web.Response(text=f"Error: {e}", status=400)
@@ -273,6 +275,8 @@ async def handler_delete_tracker(request):
             return web.Response(text="Tracker does not exist", status=400)
 
         del trackers[tracker_id]
+        await update_all_clients(request.app)
+
         return web.Response(text="OK", status=200)
     except Exception as e:
         return web.Response(text=f"Error: {e}", status=400)
