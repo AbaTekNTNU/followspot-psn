@@ -20,8 +20,10 @@
 
   let arena_state: "full_arena" | "scene_only" = $state("scene_only");
 
-  let tracker = trackers.find((ball) => {
-    ball.id === selected;
+  let tracker = $state<TrackerData | undefined>(undefined);
+
+  $effect(() => {
+    tracker = trackers.find((ball) => ball.id === selected);
   });
 
   const onchange = () => {
@@ -61,15 +63,18 @@
 
 <div class="slider-container ml-auto">
   <Modal action={buttonAction} />
-  <input
-    type="range"
-    id="z"
-    min="0"
-    max="4"
-    step="0.01"
-    oninput={onchange}
-  />
-  <output for="z">{z_viz} m</output>
+  {#if tracker}
+    <input
+      type="range"
+      id="z"
+      min="0"
+      max="4"
+      step="0.01"
+      oninput={onchange}
+      bind:value={tracker.z}
+    />
+    <output for="z">{z_viz} m</output>
+  {/if}
 </div>
 
 <style>
