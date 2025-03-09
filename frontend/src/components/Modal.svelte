@@ -11,7 +11,7 @@
   };
 </script>
 
-<button class="mb-24 rounded-md bg-red-400 p-2" onclick={openModal}>
+<button class="mb-24 rounded-md bg-red-500 p-2" onclick={openModal}>
   Change mode
 </button>
 
@@ -27,7 +27,7 @@
         >Close</button
       >
       <button
-        class="rounded-md bg-red-400 p-4"
+        class="rounded-md bg-red-500 p-4"
         onclick={() => {
           action();
           dialog.close();
